@@ -22,10 +22,10 @@ function ExportNoteButton() {
     <button
       type="button"
       onClick={exportNote}
-      className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent/20"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#23324a] bg-[#111827] px-4 py-2.5 text-[11px] font-bold text-white transition hover:border-[#3b82f6]"
     >
-      <Download className="h-4 w-4" />
-      Экспорт в заметки
+      <Download className="h-3.5 w-3.5" />
+      Экспорт заметки смены
     </button>
   )
 }

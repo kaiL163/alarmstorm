@@ -10,15 +10,15 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import MonitorPage from './pages/MonitorPage.jsx'
 
 function App() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState('')
 
   return (
     <AlarmDataProvider selectedDate={selectedDate} setSelectedDate={setSelectedDate}>
-      <div className="flex min-h-screen bg-bg text-text">
+      <div className="flex min-h-screen bg-[#070b12] text-text">
         <Sidebar />
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <Topbar selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
+          <div className="w-full px-3 py-4 xl:px-5">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/alarms" element={<AlarmsPage />} />

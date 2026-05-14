@@ -11,21 +11,29 @@ function SystemStatusCard() {
 
   if (isStorm) {
     return (
-      <div className="rounded-2xl border border-danger/40 bg-danger/10 p-5">
-        <AlertTriangle className="h-6 w-6 text-danger" />
-        <p className="mt-4 text-xs uppercase tracking-wider text-danger/80">Статус системы</p>
-        <p className="mt-1 text-xl font-bold text-danger">ШТОРМ АВАРИЙ</p>
-        <p className="mt-2 text-xs text-danger/80">↗ {stormPriorityCount} High + Medium за день</p>
+      <div className="flex items-center gap-4 rounded-xl border border-[#ef4444]/40 bg-[#25111b] p-4 shadow-[0_0_22px_rgba(239,68,68,0.12)]">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ef4444]/40 bg-[#ef4444]/10">
+          <AlertTriangle className="h-4 w-4 text-[#ef4444]" />
+        </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ca3af]">Статус системы</p>
+          <p className="mt-2 text-[12px] font-black uppercase text-[#ff4055]">Шторм аварий</p>
+          <p className="mt-2 text-[11px] font-bold text-[#ff4055]">↗ &gt;50 событий</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-success/40 bg-success/10 p-5">
-      <ShieldCheck className="h-6 w-6 text-success" />
-      <p className="mt-4 text-xs uppercase tracking-wider text-success/80">Статус системы</p>
-      <p className="mt-1 text-xl font-bold text-success">НОРМА</p>
-      <p className="mt-2 text-xs text-success/80">{stormPriorityCount} High + Medium за день</p>
+    <div className="flex items-center gap-4 rounded-xl border border-[#22c55e]/40 bg-[#0f2119] p-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#22c55e]/40 bg-[#22c55e]/10">
+        <ShieldCheck className="h-4 w-4 text-[#22c55e]" />
+      </div>
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ca3af]">Статус системы</p>
+        <p className="mt-2 text-[12px] font-black uppercase text-[#22c55e]">Норма</p>
+        <p className="mt-2 text-[11px] font-bold text-[#22c55e]">{stormPriorityCount} High + Medium</p>
+      </div>
     </div>
   )
 }

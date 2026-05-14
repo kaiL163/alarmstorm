@@ -60,7 +60,28 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
     }
   }
 
+  async function loadLatestAvailableDate() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/archive`, {
+        params: { limit: 1 },
+      })
+      setArchive(response.data)
+      setSelectedDate(response.data.available_days?.at(-1) ?? '')
+    } catch (requestError) {
+      setError(requestError.message || 'Ошибка загрузки доступных дат')
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
+    if (!selectedDate) {
+      loadLatestAvailableDate()
+      return
+    }
+
     loadData(selectedDate || undefined)
   }, [selectedDate])
 
@@ -76,7 +97,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
     error,
     loadArchive,
     reload: () => loadData(selectedDate || undefined),
-  }), [alarms, analytics, monitor, archive, selectedDate, archiveLoading, loading, error])
+  }), [alarms, analytics, monitor, archive, selectedDate, setSelectedDate, archiveLoading, loading, error])
 
   return <AlarmDataContext.Provider value={value}>{children}</AlarmDataContext.Provider>
 }

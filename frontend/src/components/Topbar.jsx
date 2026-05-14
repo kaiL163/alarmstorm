@@ -5,7 +5,7 @@ function formatTime(date) {
 }
 
 function formatDate(date) {
-  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' })
+  return date.toLocaleDateString('ru-RU')
 }
 
 function Topbar({ selectedDate, setSelectedDate }) {
@@ -17,15 +17,14 @@ function Topbar({ selectedDate, setSelectedDate }) {
   }, [])
 
   return (
-    <div className="flex h-11 items-center justify-between border-b border-border bg-surface px-5 text-xs">
-      <div className="flex items-center gap-3 text-muted">
-        <span className="relative inline-flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+    <div className="flex h-[43px] items-center justify-between border-b border-[#1b2230] bg-[#090e17] px-4 text-[10px]">
+      <div className="flex items-center gap-3 text-[#8b96a8]">
+        <span className="rounded-md border border-[#173b42] bg-[#102337] px-3 py-1 font-bold uppercase tracking-wide text-[#00f5b8]">
+          <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#00f5b8]" />
+          System Online
         </span>
-        <span className="font-semibold tracking-[0.05em] text-success">SYSTEM ONLINE</span>
-        <span className="text-border">/</span>
-        <span className="font-mono">{formatDate(now)}</span>
+        <span>/</span>
+        <span>Узел: Нефтепереработка, Цех 1</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -33,10 +32,11 @@ function Topbar({ selectedDate, setSelectedDate }) {
           type="date"
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
-          className="rounded-xl border border-border bg-bg px-3 py-2 font-mono text-xs text-text outline-none transition [color-scheme:dark] hover:border-accent focus:border-accent"
+          className="h-7 rounded-md border border-[#1b2230] bg-[#0d1422] px-2 font-mono text-[10px] text-white outline-none transition [color-scheme:dark] hover:border-[#00f5b8] focus:border-[#00f5b8]"
         />
-        <div className="font-mono text-sm font-semibold text-text">
-          {formatTime(now)}
+        <div className="text-right font-mono">
+          <p className="text-[10px] font-bold leading-3 text-white">{formatTime(now)}</p>
+          <p className="text-[9px] leading-3 text-[#8b96a8]">{formatDate(now)}</p>
         </div>
       </div>
     </div>

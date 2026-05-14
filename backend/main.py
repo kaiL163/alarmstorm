@@ -81,8 +81,8 @@ def generate_alarms(days=7, storm_prob=0.4, end_date=None):
     zones = list(SENSORS.keys())
     events = []
 
-    end_date = end_date or datetime.now().replace(hour=23, minute=0, second=0, microsecond=0)
-    base_day = (end_date - timedelta(days=days - 1)).replace(hour=8, minute=0, second=0, microsecond=0)
+    end_date = end_date or datetime(2026, 5, 14, 23, 59, 59)
+    base_day = (end_date - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     for day_idx in range(days):
         is_storm = np.random.rand() < storm_prob
@@ -93,16 +93,22 @@ def generate_alarms(days=7, storm_prob=0.4, end_date=None):
             per_day = int(np.random.randint(25, 49))
             flood_prob = 0.04
 
-        t = base_day + timedelta(days=day_idx)
+        day_start = base_day + timedelta(days=day_idx)
+        storm_anchor = day_start + timedelta(hours=int(np.random.randint(0, 24)), minutes=int(np.random.randint(0, 60)))
+        day_events = []
         for _ in range(per_day):
-            lam = 2 if np.random.rand() < flood_prob else 8
-            t += timedelta(seconds=max(0.1, float(np.random.poisson(lam=lam))))
+            if np.random.rand() < flood_prob:
+                offset_seconds = int(np.random.normal(loc=0, scale=25 * 60))
+                event_seconds = int(np.clip((storm_anchor - day_start).total_seconds() + offset_seconds, 0, 86399))
+            else:
+                event_seconds = int(np.random.randint(0, 86400))
+            t = day_start + timedelta(seconds=event_seconds, milliseconds=int(np.random.randint(0, 1000)))
 
             zone = np.random.choice(zones, p=ZONE_WEIGHTS)
             cfg = SENSORS[zone]
             tag = np.random.choice(cfg["tags"], p=cfg["weights"])
 
-            events.append({
+            day_events.append({
                 "priority": PRIORITY_MAP[tag],
                 "date": t.strftime("%Y-%m-%d"),
                 "timestamp": t.strftime("%H:%M:%S.%f")[:-3],
@@ -113,6 +119,7 @@ def generate_alarms(days=7, storm_prob=0.4, end_date=None):
                 "possible_cause": CAUSES[tag],
                 "is_bad_actor": int(tag == cfg["bad_actor"]),
             })
+        events.extend(sorted(day_events, key=lambda event: event["datetime"]))
 
     return pd.DataFrame(events)
 
@@ -150,25 +157,18 @@ def compute_clusters(df):
     return sorted(clusters, key=lambda x: x["count"], reverse=True)
 
 
-def compute_intensity(df, bins=42):
-    """Гистограмма интенсивности по реальным временным меткам.
-
-    Делит интервал [t_min, t_max] на ``bins`` равных корзин и считает
-    события в каждой. Возвращает список словарей со временной меткой
-    начала корзины и числом событий — график привязан к реальности.
-    """
+def compute_intensity(df):
+    """Почасовая интенсивность за выбранный день."""
     if df.empty:
         return []
-    ts = pd.to_datetime(df["datetime"]).sort_values()
-    t_min, t_max = ts.iloc[0], ts.iloc[-1]
-    if t_min == t_max:
-        return [{"time": t_min.isoformat(), "count": int(len(ts))}]
-
-    edges = pd.date_range(t_min, t_max, periods=bins + 1)
-    counts, _ = np.histogram(ts.astype("int64").to_numpy(), bins=edges.astype("int64").to_numpy())
+    work_df = df.copy()
+    work_df["dt"] = pd.to_datetime(work_df["datetime"])
+    day_start = work_df["dt"].min().normalize()
+    hours = pd.date_range(day_start, day_start + pd.Timedelta(hours=23), freq="h")
+    counts = work_df["dt"].dt.floor("h").value_counts().to_dict()
     return [
-        {"time": edges[i].isoformat(), "count": int(counts[i])}
-        for i in range(bins)
+        {"time": hour.isoformat(), "count": int(counts.get(hour, 0))}
+        for hour in hours
     ]
 
 
@@ -355,6 +355,7 @@ def get_archive(
         df = df[df["zone"] == zone]
     if priority:
         df = df[df["priority"] == priority]
+    df = df.sort_values("datetime", ascending=False)
     total = len(df)
     rows = df.iloc[offset:offset + limit].to_dict(orient="records")
     return {

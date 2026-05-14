@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Search, X } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronUp, Search, TriangleAlert, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAlarmData } from '../context/AlarmDataContext.jsx'
 
@@ -60,109 +60,127 @@ function AlarmsPage() {
 
   function SortIcon({ column }) {
     if (sortConfig.key !== column) {
-      return <ChevronDown className="h-3 w-3 opacity-30" />
+      return <ChevronDown className="h-3 w-3 opacity-20" />
     }
 
     return sortConfig.direction === 'asc'
-      ? <ChevronUp className="h-3 w-3 text-accent" />
-      : <ChevronDown className="h-3 w-3 text-accent" />
+      ? <ChevronUp className="h-3 w-3 text-[#00f5b8]" />
+      : <ChevronDown className="h-3 w-3 text-[#00f5b8]" />
   }
 
   const priorityClass = {
-    High: 'border-danger/40 bg-danger/10 text-danger',
-    Medium: 'border-warning/40 bg-warning/10 text-warning',
-    Low: 'border-success/40 bg-success/10 text-success',
+    High: 'text-[#ff4055]',
+    Medium: 'text-[#facc15]',
+    Low: 'text-[#22c55e]',
   }
 
-  if (loading) return <div className="text-muted">Загрузка аварий...</div>
-  if (error) return <div className="text-danger">{error}</div>
+  const rowClass = {
+    High: 'bg-[#171014] hover:bg-[#211418]',
+    Medium: 'bg-[#18150f] hover:bg-[#221b12]',
+    Low: 'bg-[#101713] hover:bg-[#152119]',
+  }
+
+  const priorityIcon = {
+    High: AlertCircle,
+    Medium: TriangleAlert,
+    Low: AlertCircle,
+  }
+
+  if (loading) return <div className="text-[#8b96a8]">Загрузка аварий...</div>
+  if (error) return <div className="text-[#ef4444]">{error}</div>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <header>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text">Аварии</h1>
+            <h1 className="text-xl font-black uppercase tracking-wide text-white">Аварии</h1>
+            <p className="mt-1 text-[12px] text-[#8b96a8]">Оперативный журнал активных событий</p>
           </div>
           <div className="grid w-full gap-3 lg:w-auto lg:grid-cols-[24rem_11rem_14rem]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b96a8]" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Поиск по тегу, зоне, причине..."
-                className="w-full rounded-xl border border-border bg-surface px-10 py-2.5 text-sm text-text outline-none transition placeholder:text-muted focus:border-accent"
+                className="w-full rounded-lg border border-[#20283a] bg-[#101725] px-10 py-2.5 text-sm text-white outline-none transition placeholder:text-[#687385] focus:border-[#00f5b8]"
               />
             </div>
             <select
               value={priorityFilter}
               onChange={(event) => setPriorityFilter(event.target.value)}
-              className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+              className="rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00f5b8]"
             >
-              <option value="" className="bg-surface text-text">Все приоритеты</option>
-              <option value="High" className="bg-surface text-text">High</option>
-              <option value="Medium" className="bg-surface text-text">Medium</option>
-              <option value="Low" className="bg-surface text-text">Low</option>
+              <option value="" className="bg-[#101725] text-white">Все приоритеты</option>
+              <option value="High" className="bg-[#101725] text-white">High</option>
+              <option value="Medium" className="bg-[#101725] text-white">Medium</option>
+              <option value="Low" className="bg-[#101725] text-white">Low</option>
             </select>
             <select
               value={zoneFilter}
               onChange={(event) => setZoneFilter(event.target.value)}
-              className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+              className="rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00f5b8]"
             >
-              <option value="" className="bg-surface text-text">Все зоны</option>
+              <option value="" className="bg-[#101725] text-white">Все зоны</option>
               {zones.map((zone) => (
-                <option key={zone} value={zone} className="bg-surface text-text">{zone}</option>
+                <option key={zone} value={zone} className="bg-[#101725] text-white">{zone}</option>
               ))}
             </select>
           </div>
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border-muted bg-surface-2 text-xs uppercase tracking-wider text-muted">
+      <div className="overflow-hidden rounded-xl border border-[#20283a] bg-[#090e17]">
+        <table className="w-full table-fixed text-left text-[12px]">
+          <thead className="border-b border-[#20283a] bg-[#0a0f19] text-[10px] uppercase tracking-[0.16em] text-[#7f8da3]">
             <tr>
-              <th className="px-4 py-3">
-                <button type="button" onClick={() => handleSort('datetime')} className="flex items-center gap-1 hover:text-text">
-                  Время <SortIcon column="datetime" />
-                </button>
-              </th>
-              <th className="px-4 py-3">
-                <button type="button" onClick={() => handleSort('priority')} className="flex items-center gap-1 hover:text-text">
+              <th className="w-[140px] px-4 py-3">
+                <button type="button" onClick={() => handleSort('priority')} className="flex items-center gap-1 hover:text-white">
                   Приоритет <SortIcon column="priority" />
                 </button>
               </th>
-              <th className="px-4 py-3">
-                <button type="button" onClick={() => handleSort('tag')} className="flex items-center gap-1 hover:text-text">
+              <th className="w-[170px] px-4 py-3">
+                <button type="button" onClick={() => handleSort('datetime')} className="flex items-center gap-1 hover:text-white">
+                  Время <SortIcon column="datetime" />
+                </button>
+              </th>
+              <th className="w-[250px] px-4 py-3">
+                <button type="button" onClick={() => handleSort('tag')} className="flex items-center gap-1 hover:text-white">
                   Тег <SortIcon column="tag" />
                 </button>
               </th>
-              <th className="px-4 py-3">
-                <button type="button" onClick={() => handleSort('zone')} className="flex items-center gap-1 hover:text-text">
-                  Зона <SortIcon column="zone" />
+              <th className="w-[260px] px-4 py-3">
+                <button type="button" onClick={() => handleSort('zone')} className="flex items-center gap-1 hover:text-white">
+                  Узел / Зона <SortIcon column="zone" />
                 </button>
               </th>
               <th className="px-4 py-3">Сообщение</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-muted">
-            {displayedAlarms.slice(0, 150).map((alarm, index) => (
-              <tr
-                key={`${alarm.datetime}-${index}`}
-                onClick={() => setSelectedAlarm(alarm)}
-                className="cursor-pointer hover:bg-surface-2/70"
-              >
-                <td className="px-4 py-3 font-mono text-xs text-muted">{alarm.timestamp}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full border px-2 py-1 text-xs ${priorityClass[alarm.priority] ?? 'border-border text-muted'}`}>
-                    {alarm.priority}
-                  </span>
-                </td>
-                <td className="px-4 py-3 font-mono text-xs text-accent">{alarm.tag}</td>
-                <td className="px-4 py-3 text-text">{alarm.zone}</td>
-                <td className="px-4 py-3 text-muted">{alarm.message}</td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-[#20283a]">
+            {displayedAlarms.slice(0, 150).map((alarm, index) => {
+              const PriorityIcon = priorityIcon[alarm.priority] ?? AlertCircle
+
+              return (
+                <tr
+                  key={`${alarm.datetime}-${index}`}
+                  onClick={() => setSelectedAlarm(alarm)}
+                  className={`cursor-pointer transition ${rowClass[alarm.priority] ?? 'bg-[#101725] hover:bg-[#151d2d]'}`}
+                >
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-2 font-bold ${priorityClass[alarm.priority] ?? 'text-[#8b96a8]'}`}>
+                      <PriorityIcon className="h-3.5 w-3.5" />
+                      {alarm.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-[11px] text-[#c7d2e0]">{alarm.timestamp}</td>
+                  <td className="truncate px-4 py-3 font-mono text-[12px] font-bold text-[#e5e7eb]">{alarm.tag}</td>
+                  <td className="truncate px-4 py-3 text-[12px] text-[#cbd5e1]">{alarm.zone}</td>
+                  <td className="truncate px-4 py-3 text-[12px] text-[#e5e7eb]">{alarm.message}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
