@@ -4,8 +4,74 @@ import { useAlarmData } from '../context/AlarmDataContext.jsx'
 
 const EVENTS_PER_DAY_STEP = 8
 
+function escapePdfText(value) {
+  return String(value ?? '')
+    .replaceAll('\\', '\\\\')
+    .replaceAll('(', '\\(')
+    .replaceAll(')', '\\)')
+    .replace(/[^\x20-\x7E]/g, '?')
+}
+
+function createPdfBlob(lines) {
+  const pageLines = []
+  for (let index = 0; index < lines.length; index += 36) {
+    pageLines.push(lines.slice(index, index + 36))
+  }
+
+  const pages = pageLines.length ? pageLines : [['AlarmStorm report', 'No data']]
+  const objects = []
+  const pageObjectIds = []
+
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>'
+  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+
+  pages.forEach((page, index) => {
+    const contentId = 4 + index * 2
+    const pageId = contentId + 1
+    pageObjectIds.push(pageId)
+    const streamLines = [
+      'BT',
+      '/F1 10 Tf',
+      '40 800 Td',
+      '14 TL',
+      ...page.map((line, index) => `${index === 0 ? '' : 'T* '}(${escapePdfText(line)}) Tj`),
+      'ET',
+    ]
+    const stream = streamLines.join('\n')
+    objects[contentId] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`
+  })
+
+  objects[2] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageObjectIds.length} >>`
+
+  const body = ['%PDF-1.4']
+  const offsets = [0]
+
+  objects.slice(1).forEach((object, index) => {
+    offsets.push(body.join('\n').length + 1)
+    body.push(`${index + 1} 0 obj`)
+    body.push(object)
+    body.push('endobj')
+  })
+
+  const xrefOffset = body.join('\n').length + 1
+  body.push('xref')
+  body.push(`0 ${objects.length}`)
+  body.push('0000000000 65535 f ')
+  offsets.slice(1).forEach((offset) => {
+    body.push(`${String(offset).padStart(10, '0')} 00000 n `)
+  })
+  body.push('trailer')
+  body.push(`<< /Size ${objects.length} /Root 1 0 R >>`)
+  body.push('startxref')
+  body.push(String(xrefOffset))
+  body.push('%%EOF')
+
+  return new Blob([body.join('\n')], { type: 'application/pdf' })
+}
+
 function ArchivePage() {
-  const { archive, loadArchive, loading, error } = useAlarmData()
+  const { archive, loadArchive, archiveLoading, archiveError } = useAlarmData()
   const [selectedDay, setSelectedDay] = useState('')
   const [query, setQuery] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
@@ -16,10 +82,21 @@ function ArchivePage() {
   const [sortConfig, setSortConfig] = useState({ key: 'datetime', direction: 'desc' })
 
   useEffect(() => {
-    if (!loading) {
-      loadArchive(selectedDay || undefined)
-    }
+    loadArchive(selectedDay || undefined)
   }, [selectedDay])
+
+  // Инициализируем все даты как свернутые по умолчанию
+  useEffect(() => {
+    if (archive?.items) {
+      const dates = [...new Set(archive.items.map((alarm) => alarm.date))]
+      setCollapsedDays(
+        dates.reduce((acc, date) => {
+          acc[date] = true
+          return acc
+        }, {})
+      )
+    }
+  }, [archive?.items])
 
   const sortedItems = useMemo(() => {
     const priorityRank = { High: 3, Medium: 2, Low: 1 }
@@ -102,33 +179,21 @@ function ArchivePage() {
   }
 
   function exportPdf() {
-    const rows = sortedItems.map((alarm) => (
-      `<tr><td>${alarm.date}</td><td>${alarm.timestamp}</td><td>${alarm.priority}</td><td>${alarm.tag}</td><td>${alarm.zone}</td><td>${alarm.message}</td></tr>`
-    )).join('')
-    const printWindow = window.open('', '_blank')
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>AlarmStorm report</title>
-          <style>
-            body { font-family: Arial, sans-serif; color: #111827; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid #d1d5db; padding: 6px; text-align: left; }
-            th { background: #f3f4f6; }
-          </style>
-        </head>
-        <body>
-          <h1>AlarmStorm report</h1>
-          <p>Generated: ${new Date().toLocaleString('ru-RU')}</p>
-          <table>
-            <thead><tr><th>Date</th><th>Time</th><th>Priority</th><th>Tag</th><th>Zone</th><th>Message</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.print()
+    const lines = [
+      'AlarmStorm report',
+      `Generated: ${new Date().toLocaleString('ru-RU')}`,
+      `Rows: ${sortedItems.length}`,
+      '',
+      'Date | Time | Priority | Tag | Zone | Message',
+      ...sortedItems.map((alarm) => (
+        `${alarm.date} | ${alarm.timestamp} | ${alarm.priority} | ${alarm.tag} | ${alarm.zone} | ${alarm.message}`
+      )),
+    ]
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(createPdfBlob(lines))
+    link.download = `alarmstorm_report_${new Date().toISOString().slice(0, 10)}.pdf`
+    link.click()
+    URL.revokeObjectURL(link.href)
   }
 
   function SortIcon({ column }) {
@@ -159,8 +224,8 @@ function ArchivePage() {
     Low: 'INFO',
   }
 
-  if (loading) return <div className="text-[#8b96a8]">Загрузка архива...</div>
-  if (error) return <div className="text-[#ef4444]">{error}</div>
+  if (archiveLoading) return <div className="text-[#8b96a8]">Загрузка архива...</div>
+  if (archiveError) return <div className="text-[#ef4444]">{archiveError}</div>
 
   return (
     <div className="space-y-4">
@@ -190,7 +255,7 @@ function ArchivePage() {
               setSelectedDay(event.target.value)
               setVisibleByDay({})
             }}
-            className="h-9 rounded-lg border border-[#263247] bg-[#101725] px-3 text-[12px] text-white outline-none focus:border-[#00f5b8]"
+            className="appearance-none h-9 rounded-lg border border-[#263247] bg-[#101725] px-3 pr-8 text-[12px] text-white outline-none focus:border-[#00f5b8] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiA0TDYgOEwxMCA0IiBzdHJva2U9IiM4Yjk2YTgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_10px_center]"
           >
             <option value="" className="bg-[#101725] text-white">Все даты</option>
             {archive?.available_days?.map((day) => (
@@ -220,7 +285,7 @@ function ArchivePage() {
           <select
             value={priorityFilter}
             onChange={(event) => setPriorityFilter(event.target.value)}
-            className="h-9 rounded-lg border border-[#263247] bg-[#0b111d] px-3 text-[12px] text-white outline-none focus:border-[#00f5b8]"
+            className="h-9 appearance-none rounded-lg border border-[#263247] bg-[#0b111d] px-3 pr-9 text-[12px] text-white outline-none focus:border-[#00f5b8] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiA0TDYgOEwxMCA0IiBzdHJva2U9IiM4Yjk2YTgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_12px_center]"
           >
             <option value="" className="bg-[#101725] text-white">Все приоритеты</option>
             <option value="High" className="bg-[#101725] text-white">High</option>
@@ -230,7 +295,7 @@ function ArchivePage() {
           <select
             value={zoneFilter}
             onChange={(event) => setZoneFilter(event.target.value)}
-            className="h-9 rounded-lg border border-[#263247] bg-[#0b111d] px-3 text-[12px] text-white outline-none focus:border-[#00f5b8]"
+            className="h-9 appearance-none rounded-lg border border-[#263247] bg-[#0b111d] px-3 pr-9 text-[12px] text-white outline-none focus:border-[#00f5b8] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiA0TDYgOEwxMCA0IiBzdHJva2U9IiM4Yjk2YTgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_12px_center]"
           >
             <option value="" className="bg-[#101725] text-white">Все зоны</option>
             {zones.map((zone) => (

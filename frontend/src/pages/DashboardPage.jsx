@@ -12,8 +12,7 @@ function DashboardPage() {
     count: bucket.count,
   }))
   const clusters = summary?.clusters ?? []
-  const activeClustersCount = clusters.filter((cluster) => cluster.count > 5).length
-  const topClusters = clusters.slice(0, 3)
+  const topClusters = clusters
 
   if (loading) {
     return <div className="text-[#8b96a8]">Загрузка данных...</div>
@@ -65,13 +64,13 @@ function DashboardPage() {
             <div className="flex items-center justify-between border-b border-[#1b2230] px-4 py-3">
               <div className="flex items-center gap-2">
                 <RadioTower className="h-4 w-4 text-[#60a5fa]" />
-                <h2 className="text-[12px] font-black uppercase tracking-wide text-white">Топ-кластеры аварий</h2>
+                <h2 className="text-[12px] font-black uppercase tracking-wide text-white">Кластеры аварий</h2>
               </div>
               <span className="rounded border border-[#1d4ed8]/40 bg-[#10213b] px-2 py-1 text-[9px] font-bold text-[#60a5fa]">
-                Активные: {activeClustersCount}
+                Активные: {topClusters.length}
               </span>
             </div>
-            <div className="p-3">
+            <div className="max-h-[400px] overflow-y-auto p-3 custom-scrollbar">
               {topClusters.length ? (
                 <div className="space-y-2">
                   {topClusters.map((cluster) => (

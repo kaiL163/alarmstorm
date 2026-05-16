@@ -95,6 +95,14 @@ def generate_alarms(days=7, storm_prob=0.4, end_date=None):
 
         day_start = base_day + timedelta(days=day_idx)
         storm_anchor = day_start + timedelta(hours=int(np.random.randint(0, 24)), minutes=int(np.random.randint(0, 60)))
+
+        # Случайная проблемная зона для этого дня
+        problematic_zone = np.random.choice(zones)
+        # Взвешенное распределение кластеров: 4 (50%), 3 (30%), 2 (15%), 1 (5%)
+        cluster_distribution = [4, 3, 3, 3, 2, 2, 1]
+        num_clusters = np.random.choice(cluster_distribution)
+        active_zones = np.random.choice(zones, size=num_clusters, replace=False)
+
         day_events = []
         for _ in range(per_day):
             if np.random.rand() < flood_prob:
@@ -104,7 +112,8 @@ def generate_alarms(days=7, storm_prob=0.4, end_date=None):
                 event_seconds = int(np.random.randint(0, 86400))
             t = day_start + timedelta(seconds=event_seconds, milliseconds=int(np.random.randint(0, 1000)))
 
-            zone = np.random.choice(zones, p=ZONE_WEIGHTS)
+            # События генерируются только для активных зон этого дня
+            zone = np.random.choice(active_zones, p=None)
             cfg = SENSORS[zone]
             tag = np.random.choice(cfg["tags"], p=cfg["weights"])
 

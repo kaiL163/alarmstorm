@@ -29,6 +29,26 @@ function ChartTooltip({ active, payload, label }) {
   )
 }
 
+function HeatmapCell({ day, hour, count, color }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div
+      className="relative h-4 rounded-sm"
+      style={{ backgroundColor: color }}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      {showTooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg border border-[#263247] bg-[#0b1019] px-3 py-2 text-[11px] text-white shadow-xl shadow-black/40 whitespace-nowrap z-10">
+          <p className="font-bold text-[#cbd5e1]">{day} {String(hour).padStart(2, '0')}:00</p>
+          <p className="mt-1 text-[#60a5fa]">Количество: {count}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AnalyticsPage() {
   const [events, setEvents] = useState([])
   const [period, setPeriod] = useState('7')
@@ -237,11 +257,12 @@ function AnalyticsPage() {
                 {HOURS.map((hour) => {
                   const bucket = analytics.heatBuckets.find((item) => item.day === day && item.hour === hour)
                   return (
-                    <div
+                    <HeatmapCell
                       key={`${day}-${hour}`}
-                      title={`${day} ${hour}:00 — ${bucket?.count ?? 0}`}
-                      className="h-4 rounded-sm"
-                      style={{ backgroundColor: getHeatColor(bucket?.count ?? 0, analytics.heatThresholds) }}
+                      day={day}
+                      hour={hour}
+                      count={bucket?.count ?? 0}
+                      color={getHeatColor(bucket?.count ?? 0, analytics.heatThresholds)}
                     />
                   )
                 })}
@@ -251,7 +272,7 @@ function AnalyticsPage() {
         </div>
 
         <div className="rounded-xl border border-[#20283a] bg-[#101725] p-5">
-          <h2 className="text-[12px] font-black uppercase tracking-[0.16em] text-[#aab4c3]">Распределение по Severity</h2>
+          <h2 className="text-[12px] font-black uppercase tracking-[0.16em] text-[#aab4c3]">Распределение по критичности</h2>
           <div className="mt-4 h-[210px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

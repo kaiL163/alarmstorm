@@ -11,6 +11,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
   const [monitor, setMonitor] = useState(null)
   const [archive, setArchive] = useState(null)
   const [archiveLoading, setArchiveLoading] = useState(false)
+  const [archiveError, setArchiveError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -46,7 +47,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
 
   async function loadArchive(day) {
     setArchiveLoading(true)
-    setError(null)
+    setArchiveError(null)
 
     try {
       const response = await axios.get(`${API_BASE_URL}/api/archive`, {
@@ -54,7 +55,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
       })
       setArchive(response.data)
     } catch (requestError) {
-      setError(requestError.message || 'Ошибка загрузки архива')
+      setArchiveError(requestError.message || 'Ошибка загрузки архива')
     } finally {
       setArchiveLoading(false)
     }
@@ -93,11 +94,12 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
     selectedDate,
     setSelectedDate,
     archiveLoading,
+    archiveError,
     loading,
     error,
     loadArchive,
     reload: () => loadData(selectedDate || undefined),
-  }), [alarms, analytics, monitor, archive, selectedDate, setSelectedDate, archiveLoading, loading, error])
+  }), [alarms, analytics, monitor, archive, selectedDate, setSelectedDate, archiveLoading, archiveError, loading, error])
 
   return <AlarmDataContext.Provider value={value}>{children}</AlarmDataContext.Provider>
 }

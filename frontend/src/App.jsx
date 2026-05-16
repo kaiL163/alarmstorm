@@ -8,6 +8,7 @@ import AnalyticsPage from './pages/AnalyticsPage.jsx'
 import ArchivePage from './pages/ArchivePage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import MonitorPage from './pages/MonitorPage.jsx'
+import SettingsPage from './pages/SettingsPage.jsx'
 
 function App() {
   const [selectedDate, setSelectedDate] = useState('')
@@ -25,6 +26,7 @@ function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/monitor" element={<MonitorPage />} />
               <Route path="/archive" element={<ArchivePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

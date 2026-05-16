@@ -87,7 +87,7 @@ function AlarmsPage() {
   }
 
   if (loading) return <div className="text-[#8b96a8]">Загрузка аварий...</div>
-  if (error) return <div className="text-[#ef4444]">{error}</div>
+  if (error) return <div className="rounded-xl border border-[#ef4444]/40 bg-[#ef4444]/10 p-5 text-[#ef4444]">{error}</div>
 
   return (
     <div className="space-y-4">
@@ -110,7 +110,7 @@ function AlarmsPage() {
             <select
               value={priorityFilter}
               onChange={(event) => setPriorityFilter(event.target.value)}
-              className="rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00f5b8]"
+              className="appearance-none rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-[#00f5b8] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiA0TDYgOEwxMCA0IiBzdHJva2U9IiM4Yjk2YTgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_10px_center]"
             >
               <option value="" className="bg-[#101725] text-white">Все приоритеты</option>
               <option value="High" className="bg-[#101725] text-white">High</option>
@@ -120,7 +120,7 @@ function AlarmsPage() {
             <select
               value={zoneFilter}
               onChange={(event) => setZoneFilter(event.target.value)}
-              className="rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00f5b8]"
+              className="appearance-none rounded-lg border border-[#20283a] bg-[#101725] px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-[#00f5b8] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiA0TDYgOEwxMCA0IiBzdHJva2U9IiM4Yjk2YTgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_10px_center]"
             >
               <option value="" className="bg-[#101725] text-white">Все зоны</option>
               {zones.map((zone) => (
