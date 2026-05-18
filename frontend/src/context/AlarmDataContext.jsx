@@ -24,7 +24,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
       const [alarmsResponse, analyticsResponse, monitorResponse, archiveResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/alarms`, { params }),
         axios.get(`${API_BASE_URL}/api/analytics`, { params }),
-        axios.get(`${API_BASE_URL}/api/monitor`),
+        axios.get(`${API_BASE_URL}/api/monitor`, { params }),
         axios.get(`${API_BASE_URL}/api/archive`, { params: { limit: 5000 } }),
       ])
 
@@ -36,6 +36,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
       if (requestError.response?.status === 404) {
         setAlarms([])
         setAnalytics(null)
+        setMonitor(null)
         setError('Нет данных за выбранный период')
       } else {
         setError(requestError.message || 'Ошибка загрузки данных')
@@ -58,6 +59,20 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
       setArchiveError(requestError.message || 'Ошибка загрузки архива')
     } finally {
       setArchiveLoading(false)
+    }
+  }
+
+  async function loadMonitor(date) {
+    try {
+      const params = date ? { date } : undefined
+      const response = await axios.get(`${API_BASE_URL}/api/monitor`, { params })
+      setMonitor(response.data)
+    } catch (requestError) {
+      if (requestError.response?.status === 404) {
+        setMonitor(null)
+        return
+      }
+      setError(requestError.message || 'Ошибка загрузки мониторинга')
     }
   }
 
@@ -98,6 +113,7 @@ export function AlarmDataProvider({ children, selectedDate, setSelectedDate }) {
     loading,
     error,
     loadArchive,
+    loadMonitor,
     reload: () => loadData(selectedDate || undefined),
   }), [alarms, analytics, monitor, archive, selectedDate, setSelectedDate, archiveLoading, archiveError, loading, error])
 

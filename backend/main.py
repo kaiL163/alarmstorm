@@ -34,6 +34,16 @@ SENSORS = {
     },
 }
 
+EQUIPMENT = [
+    {"id": "C-101A", "name": "Centrifugal Compressor", "zone": "Compressor Station A", "base_speed": 14520, "base_power": 3.2, "base_efficiency": 78.4, "base_vibration": 2.8},
+    {"id": "C-101B", "name": "Centrifugal Compressor", "zone": "Compressor Station A", "base_speed": 14480, "base_power": 3.1, "base_efficiency": 81.2, "base_vibration": 2.4},
+    {"id": "GT-201", "name": "Gas Turbine", "zone": "Boiler Unit", "base_speed": 5400, "base_power": 12.5, "base_efficiency": 65.4, "base_vibration": 3.1},
+    {"id": "P-301A", "name": "Reciprocating Pump", "zone": "Pump Station B", "base_speed": 1450, "base_power": 0.8, "base_efficiency": 88.1, "base_vibration": 1.2},
+    {"id": "P-301B", "name": "Reciprocating Pump", "zone": "Pump Station B", "base_speed": 0, "base_power": 0.0, "base_efficiency": 0.0, "base_vibration": 0.0},
+    {"id": "F-401", "name": "Cooling Tower Fan", "zone": "Heat Exchanger C", "base_speed": 980, "base_power": 0.4, "base_efficiency": 92.0, "base_vibration": 2.6},
+    {"id": "TR-501", "name": "Main Transformer", "zone": "Boiler Unit", "base_speed": None, "base_power": 45.0, "base_efficiency": 99.5, "base_vibration": 0.5},
+]
+
 ZONE_WEIGHTS = [0.65, 0.15, 0.10, 0.10]
 
 PRIORITY_MAP = {
@@ -255,6 +265,13 @@ def compute_daily_analytics(df):
 def compute_monitor(df):
     """Статус узлов/зон + временные ряды по часу для графиков."""
     nodes = []
+    total_high = int((df["priority"] == "High").sum()) if not df.empty else 0
+    total_medium = int((df["priority"] == "Medium").sum()) if not df.empty else 0
+    live_phase = datetime.utcnow().timestamp() / 3
+    live_factor = float(np.sin(live_phase))
+    live_jitter = float(np.cos(live_phase / 1.7))
+    pressure_base = 149.2 + min(2.8, total_high * 0.035)
+    oil_base = 156.4 + min(1.6, total_medium * 0.012)
     for zone, cfg in SENSORS.items():
         zdf = df[df["zone"] == zone]
         count = len(zdf)
@@ -275,20 +292,74 @@ def compute_monitor(df):
             "load_pct": int(min(100, 30 + count / 10)),
         })
 
-    # Часовой ряд по всему df
     if df.empty:
-        hourly = []
+        hourly = [{"time": f"{hour:02d}:00", "count": 0} for hour in range(24)]
     else:
         ts = pd.to_datetime(df["datetime"])
-        buckets = ts.dt.floor("h").value_counts().sort_index()
+        buckets = ts.dt.hour.value_counts().sort_index()
         hourly = [
-            {"time": idx.isoformat(), "count": int(val)}
-            for idx, val in buckets.items()
+            {"time": f"{hour:02d}:00", "count": int(buckets.get(hour, 0))}
+            for hour in range(24)
         ]
+
+    equipment = []
+    for item in EQUIPMENT:
+        zone_df = df[df["zone"] == item["zone"]]
+        zone_total = len(zone_df)
+        zone_high = int((zone_df["priority"] == "High").sum()) if zone_total else 0
+        status = "offline" if item["base_speed"] == 0 else "ok"
+        if status != "offline" and zone_high >= 20:
+            status = "critical"
+        elif status != "offline" and (zone_high >= 5 or zone_total >= 80):
+            status = "warning"
+        alarm_load = min(0.22, zone_total * 0.0018 + zone_high * 0.0035)
+        speed_variation = 1 - alarm_load + live_factor * 0.006
+        speed = None if item["base_speed"] is None else int(max(0, item["base_speed"] * speed_variation))
+        vibration = round(item["base_vibration"] + min(8.4, zone_high * 0.28) + abs(live_jitter) * 0.25, 1)
+        efficiency = round(max(0, item["base_efficiency"] - min(18, zone_high * 0.18) - alarm_load * 8), 1)
+        equipment.append({
+            "id": item["id"],
+            "name": item["name"],
+            "zone": item["zone"],
+            "status": status,
+            "speed": speed,
+            "power": round(item["base_power"] + min(2.5, zone_total * 0.008), 1),
+            "efficiency": efficiency,
+            "vibration": vibration,
+        })
+
+    active_equipment = [item for item in equipment if item["speed"]]
+    total_speed = int(sum(item["speed"] or 0 for item in equipment))
+    total_power = round(sum(item["power"] for item in equipment), 1)
+    plant_efficiency = round(sum(item["efficiency"] for item in active_equipment) / max(1, len(active_equipment)), 1)
+    vibration_peak = round(max((item["vibration"] for item in equipment), default=0), 1)
+    trend_counts = [point["count"] for point in hourly]
+    trends = {
+        "vibration": [
+            {"time": point["time"], "value": round(2.0 + point["count"] * 0.16 + np.sin(index / 2 + live_phase) * 0.35, 2)}
+            for index, point in enumerate(hourly)
+        ],
+        "pressure": [
+            {"time": point["time"], "value": round(pressure_base + point["count"] * 0.025 + np.cos(index / 3 + live_phase) * 0.7, 2)}
+            for index, point in enumerate(hourly)
+        ],
+        "oil_temperature": [
+            {"time": point["time"], "value": round(oil_base + point["count"] * 0.018 + np.sin(index / 1.7 + live_phase) * 0.45, 2)}
+            for index, point in enumerate(hourly)
+        ],
+    }
 
     return {
         "nodes": nodes,
         "hourly": hourly,
+        "equipment": equipment,
+        "kpis": {
+            "system_speed": total_speed,
+            "total_motor_power": total_power,
+            "plant_efficiency": plant_efficiency,
+            "vibration_peak": vibration_peak,
+        },
+        "trends": trends,
         "total": len(df),
         "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
@@ -341,9 +412,12 @@ def get_analytics(
 
 
 @app.get("/api/monitor")
-def get_monitor():
+def get_monitor(date: str | None = Query(default=None, description="YYYY-MM-DD")):
     """Статус системы/узлов и почасовой ряд для графиков."""
-    return compute_monitor(alarms_df[alarms_df["date"] == LATEST_DAY])
+    target_date = date or LATEST_DAY
+    if target_date not in AVAILABLE_DAYS:
+        raise HTTPException(status_code=404, detail=f"No data for date {target_date}")
+    return compute_monitor(alarms_df[alarms_df["date"] == target_date])
 
 
 @app.get("/api/archive")

@@ -1,113 +1,93 @@
-import { BellRing, Database, Download, KeyRound, RefreshCw, Save, ShieldCheck, SlidersHorizontal } from 'lucide-react'
+import { Bell, Globe2, LogOut, Shield, User, UserRound } from 'lucide-react'
 
-const settingSections = [
-  {
-    title: 'Оповещения',
-    description: 'Правила уведомлений для операторов и смены.',
-    icon: BellRing,
-    actions: ['Настроить каналы', 'Тест уведомления'],
-  },
-  {
-    title: 'Пороговые значения',
-    description: 'Параметры определения шторма и критичности алармов.',
-    icon: SlidersHorizontal,
-    actions: ['Изменить пороги', 'Сбросить по умолчанию'],
-  },
-  {
-    title: 'Источники данных',
-    description: 'Подключение SCADA-тегов и синхронизация архива.',
-    icon: Database,
-    actions: ['Проверить соединение', 'Обновить справочники'],
-  },
-  {
-    title: 'Безопасность',
-    description: 'Роли, доступы и подтверждение критических действий.',
-    icon: ShieldCheck,
-    actions: ['Управление ролями', 'Журнал доступа'],
-  },
-]
+function Field({ label, value, accent }) {
+  return (
+    <label className="block">
+      <span className="text-[11px] font-bold text-[#7f8da3]">{label}</span>
+      <div className={[
+        'mt-2 flex h-10 items-center rounded-lg border border-[#20283a] bg-[#172033] px-4 text-[13px] font-bold',
+        accent ? 'text-[#00d4a6]' : 'text-[#cbd5e1]',
+      ].join(' ')}
+      >
+        {value}
+      </div>
+    </label>
+  )
+}
+
+function SectionTitle({ icon: Icon, title, color }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-[#1b2230] pb-5">
+      <Icon className="h-5 w-5" style={{ color }} />
+      <h2 className="text-[17px] font-black text-white">{title}</h2>
+    </div>
+  )
+}
 
 function SettingsPage() {
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <h1 className="text-xl font-black uppercase tracking-wide text-white">Настройки</h1>
-          <p className="mt-1 text-[12px] text-[#8b96a8]">Системные параметры и служебные действия</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#00f5b8]/40 bg-[#06251d] px-4 text-[12px] font-bold text-[#00f5b8] transition hover:border-[#00f5b8]">
-            <Save className="h-3.5 w-3.5" />
-            Сохранить
-          </button>
-          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#263247] bg-[#101725] px-4 text-[12px] font-bold text-[#9ca3af] transition hover:border-[#3b82f6] hover:text-white">
-            <RefreshCw className="h-3.5 w-3.5" />
-            Обновить
-          </button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-[900px] space-y-7 pb-12">
+      <h1 className="text-3xl font-black text-white">Настройки системы</h1>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: 'Профиль', value: 'Оператор #04', icon: KeyRound },
-          { label: 'Роль', value: 'Смена A', icon: ShieldCheck },
-          { label: 'Экспорт', value: 'CSV / PDF', icon: Download },
-          { label: 'Синхронизация', value: 'Авто', icon: RefreshCw },
-        ].map((item) => {
-          const Icon = item.icon
-          return (
-            <div key={item.label} className="rounded-xl border border-[#20283a] bg-[#101725] p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7f8da3]">{item.label}</p>
-                  <p className="mt-3 text-lg font-black text-white">{item.value}</p>
-                </div>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1d4ed8]/40 bg-[#10213b]">
-                  <Icon className="h-4 w-4 text-[#60a5fa]" />
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      <section className="rounded-2xl border border-[#20283a] bg-[#101725] p-7">
+        <SectionTitle icon={User} title="Профиль оператора" color="#00d4a6" />
+        <div className="mt-6 grid gap-6 md:grid-cols-[96px_minmax(0,1fr)]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[#263247] bg-[#172033]">
+            <UserRound className="h-10 w-10 text-[#687385]" />
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="ID Оператора" value="OP-04-A" />
+            <Field label="Смена" value="Смена A" />
+            <Field label="Имя пользователя" value="Иван Иванов" />
+            <Field label="Роль" value="Старший инженер-технолог" accent />
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        {settingSections.map((section) => {
-          const Icon = section.icon
-          return (
-            <div key={section.title} className="rounded-xl border border-[#20283a] bg-[#101725] p-5">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#00f5b8]/30 bg-[#06251d]">
-                  <Icon className="h-5 w-5 text-[#00f5b8]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[13px] font-black uppercase tracking-wide text-white">{section.title}</h2>
-                  <p className="mt-1 text-[12px] leading-5 text-[#8b96a8]">{section.description}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {section.actions.map((action) => (
-                      <button key={action} type="button" className="rounded-lg border border-[#263247] bg-[#0b111d] px-3 py-2 text-[11px] font-bold text-[#cbd5e1] transition hover:border-[#3b82f6] hover:text-white">
-                        {action}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      <section className="rounded-2xl border border-[#20283a] bg-[#101725] p-7">
+        <SectionTitle icon={Shield} title="Безопасность" color="#3b82f6" />
+        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_170px] md:items-end">
+          <Field label="Текущий пароль" value="••••••••" />
+          <button type="button" className="h-10 rounded-lg border border-[#1d4ed8]/60 bg-[#10213b] px-4 text-[13px] font-black text-[#3b82f6] transition hover:border-[#3b82f6] hover:text-[#60a5fa]">
+            Сменить пароль
+          </button>
+        </div>
       </section>
 
-      <section className="rounded-xl border border-[#20283a] bg-[#101725] p-5">
-        <h2 className="text-[13px] font-black uppercase tracking-wide text-white">Служебные переключатели</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {['Автообновление данных', 'Звуковые уведомления', 'Подтверждать критические действия'].map((label, index) => (
-            <label key={label} className="flex cursor-pointer items-center justify-between rounded-lg border border-[#263247] bg-[#0b111d] px-4 py-3 text-[12px] text-[#cbd5e1]">
-              <span>{label}</span>
-              <input type="checkbox" defaultChecked={index !== 1} className="h-4 w-4 accent-[#00f5b8]" />
+      <section className="rounded-2xl border border-[#20283a] bg-[#101725] p-7">
+        <SectionTitle icon={Bell} title="Системные предпочтения" color="#facc15" />
+        <div className="mt-6 space-y-4">
+          <div className="flex h-12 items-center justify-between rounded-lg border border-[#20283a] bg-[#172033] px-4">
+            <div className="flex items-center gap-3 text-[13px] font-bold text-[#cbd5e1]">
+              <Bell className="h-4 w-4 text-[#8b96a8]" />
+              Звуковые уведомления о критических авариях
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input type="checkbox" defaultChecked className="peer sr-only" />
+              <span className="h-7 w-12 rounded-full bg-[#263247] transition peer-checked:bg-[#00d4a6]" />
+              <span className="absolute left-1 h-5 w-5 rounded-full bg-white transition peer-checked:translate-x-5" />
             </label>
-          ))}
+          </div>
+
+          <div className="grid h-12 grid-cols-[1fr_160px] items-center gap-4 rounded-lg border border-[#20283a] bg-[#172033] px-4">
+            <div className="flex items-center gap-3 text-[13px] font-bold text-[#cbd5e1]">
+              <Globe2 className="h-4 w-4 text-[#8b96a8]" />
+              Язык интерфейса
+            </div>
+            <select className="h-8 rounded-md border border-[#0b111d] bg-[#0b111d] px-3 text-[12px] font-bold text-white outline-none">
+              <option>Русский</option>
+              <option>English</option>
+            </select>
+          </div>
         </div>
       </section>
+
+      <div className="flex justify-end">
+        <button type="button" className="inline-flex h-11 items-center gap-3 rounded-lg border border-[#ef4444]/40 bg-[#3a1420] px-6 text-[13px] font-black text-[#ff4055] transition hover:border-[#ef4444]">
+          <LogOut className="h-4 w-4" />
+          Выйти из системы
+        </button>
+      </div>
     </div>
   )
 }
